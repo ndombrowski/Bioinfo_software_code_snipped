@@ -6,6 +6,10 @@
     "1_Basics.html": "5fd16248"
   },
   "Annotating_genomes.qmd": {
-    "Annotating_genomes.html": "62d837af"
+    "Annotating_genomes.html": "62d837af",
+    "Annotating_genomes.tex": "78f43a37"
+  },
+  "readme.qmd": {
+    "readme.html": "d3821694"
   }
 }

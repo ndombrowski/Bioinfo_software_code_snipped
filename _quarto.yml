@@ -1,6 +1,7 @@
 # Book settings
 project:
   type: book
+  output-dir: docs
 
 book:
   title: "Cookbook to use common bioinformatic software"
