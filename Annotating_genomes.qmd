@@ -1,0 +1,30 @@
+# Tools for genome annotations
+
+## Hmmsearch
+
+### Basics
+
+hmmsearch  is  used  to  search  one or more profiles against a sequence database.  For each profile in <hmmfile>, use that query profile to search the target database of sequences in <seqdb>, and output ranked lists of the sequences with the most significant matches to the profile. 
+
+- -o <f> Direct the main human-readable output to a file <f> instead of the default stdout. **Careful, file becomes large**
+- --tblout: Save a simple tabular (space-delimited) file summarizing the per-target output, with one data line  per  homologous target sequence found.
+- --domtblout <f>Save a simple tabular (space-delimited) file summarizing the per-domain output, with one data line per homologousdomain detected in a query sequence for each homologous model.
+
+Available databases: 
+
+- /export/lv1/user/spang_team/Databases/arCOGs2019/All_Arcogs_2018.hmm
+
+```{bash}
+#example usage for an acrog search
+hmmsearch --tblout output/sequence_results.txt -o output/results_all.txt --domtblout output/domain_results.txt --notextw --cpu 100 /export/lv1/user/spang_team/Databases/arCOGs2019/All_Arcogs_2018.hmm Genomes.faa
+```
+
+### Parsing the output
+
+```{bash}
+#format the full table and only select sequences above a certain evalue
+sed 's/ \+ /\t/g' output/sequence_results.txt | sed '/^#/d'| sed 's/ /\t/g'| awk -F'\t' -v OFS='\t' '{print $1, $3, $6, $5}' | awk -F'\t' -v OFS='\t' '($4 + 0) <= 1E-3'  > output/sequence_results_red_e_cutoff.txt
+
+#get best hit based on bit score, and then evalue
+sort -t$'\t' -k3,3gr -k4,4g KOs_hmmer_raw/sequence_results_red_e_cutoff.txt | sort -t$'\t' --stable -u -k1,1  | sort -t$'\t' -k3,3gr -k4,4g >  KOs_hmmer_raw/All_KO_hmm.txt
+```

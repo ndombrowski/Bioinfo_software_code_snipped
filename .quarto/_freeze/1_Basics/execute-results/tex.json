@@ -1,0 +1,10 @@
+{
+  "hash": "9a59559bd56eb0b3c3504ff8bfa53d3b",
+  "result": {
+    "markdown": "# AWK basics\n\n## print header info\n\n::: {.cell execution_count=1}\n``` {.bash .cell-code}\nawk -F'\\t' '{for (i = 1; i <= NF; ++i) print i, $i; exit }' temp1\n```\n:::\n\n\n",
+    "supporting": [
+      "1_Basics_files"
+    ],
+    "filters": []
+  }
+}
