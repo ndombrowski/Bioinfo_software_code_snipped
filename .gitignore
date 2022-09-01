@@ -9,7 +9,6 @@
 .DS_Store
 _book
 _bookdown_files
-docs
 _rmd4sci.rds
 notes
 *.log
