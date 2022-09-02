@@ -1,0 +1,27 @@
+# Tools for sequence manipulation
+
+## bedtools
+
+### Extract regions of interest
+
+Takes a bed file as input and extract that region from a multiple sequence fasta file.
+
+Example for the .bed input file:
+AP024486.1_BCS91053.1	175	392	arCOG03214.1	182.5
+
+Example for the output file:
+>AP024486.1_BCS91053.1:175-392
+DFIETWLKALDIVDKFGELKKTEYNIDQKEVFLLTSVIRDTTNVNIPEWLPISKSDLIQYNKEFFDINKPEGVDYTYGERLFNYAFNDKIYDQIDYIKAKLKESSYTRRAVAVTWNLEKDQSSSNPPCLIAVQYLIKFNKLYLYALFRSHDIYGAWILNAYALIMLQHRVAEQLNIKPGAIAINSVSAHIYKNNFQRVKDILDKYYRNKQEPFVIDE
+
+```{bash}
+bedtools getfasta -fi All_Genomes.faa -bed to_extract.bed  > extracted_proteins.fasta
+```
+
+
+### Subtract regions of interest
+
+[bedtools subtract](https://bedtools.readthedocs.io/en/latest/content/tools/subtract.html) bedtools` subtract searches for features in B that overlap A by at least the number of base pairs given by the -f option. If an overlapping feature is found in B, the overlapping portion is removed from A and the remaining portion of A is reported. If a feature in B overlaps all of a feature in A, the A feature will not be reported. If a feature in B does not overlap a feature in A by at least the -f amount, the A feature will be reported in its entirety.
+
+```{bash}
+bedtools subtract [OPTIONS] -a fileA.bed -b fileB.bed
+```
