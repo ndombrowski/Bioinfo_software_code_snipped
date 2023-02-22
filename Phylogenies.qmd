@@ -1,0 +1,101 @@
+# Tools for phylogenetic analyses
+
+## Aligning
+
+### [Mafft](https://mafft.cbrc.jp/alignment/software/)
+
+```{bash}
+#less than 1000 seqs
+mafft-linsi --reorder --thread 4  Input.faa > Input.aln
+
+#more than 1000 seqs
+mafft --reorder --thread 4  Input.faa > Input.aln
+```
+
+## Trimming
+
+### [BMGE](https://pubmed.ncbi.nlm.nih.gov/20626897/)
+
+```{bash}
+ java -jar /opt/biolinux/BMGE-1.12/BMGE.jar -i Input.aln -t AA -m BLOSUM30 -h 0.55 -of Input_trimmed.aln
+```
+
+### [Trimal](https://vicfero.github.io/trimal/)
+
+Trimal comes with different trimming modes. The two most common ones we use are:
+
+-gappyout: Use automated selection on "gappyout" mode. This method only use information based on gaps' distribution.
+-automated1: Use a heuristic selection of the automatic method based on similarity statistics.(Optimized for Maximum Likelihood phylogenetic tree reconstruction).
+
+```{bash}
+trimal -in Input.aln -out Input_trimmed.aln -gappyout
+```
+
+Trimal adds the positions in the header, we can remove these easily with:
+
+```{bash}
+cut -f1 -d " " Input_trimmed.aln > Input_trimmed_clean.aln
+```
+
+
+## Phylogenetic reconstructions
+
+### Iqtree2
+
+#### Running iqtree
+
+Run iqtree on several single gene trees using a basic model:
+
+```{bash}
+parallel -j25 'i={}; iqtree2 -s ${i}.aln -m LG  -T AUTO -keep-ident --threads-max 4 -bb 1000 -bnni' ::: `cat $elife_markers`
+```
+
+Run a tree using the pmsf model:
+
+```{bash}
+#setup iqtree
+module load iqtree/2.1.2
+
+#run guide tree on laplace
+#step 1 is to infer a guide tree (which is used to estimate the site-specific compositions):
+iqtree2 -s Elife_25_BacV5_Alpha_v1_no_gappy_seq.faa -m LG+G+F -T AUTO --threads-max 40 --prefix Elife_25_BacV5_Alpha_v1_LGGFguide.tree
+
+#run psmf
+#step 2 is to run a tree search, bootstrap, etc, using the site-specific compositions estimated from the guide tree. This command first estimates the site-specific compositions (producing a .sitefreq file) and then runs the tree inference:
+iqtree2 -s Elife_25_BacV5_Alpha_v1_no_gappy_seq.faa -m LG+C60+G -ft Elife_25_BacV5_Alpha_v1_LGGFguide.tree.treefile -T AUTO --threads-max 80 -bb 1000 -alrt 1000 --prefix Elife_25_BacV5_Alpha_v1_LGC60G_PMSF
+```
+
+#### Down-stream parsing
+
+Add a tax string into the treefile
+
+```{bash}
+for sample in *treefile ; do perl /export/lv1/user/spang_team/Scripts/Others/Replace_tree_names.pl names_to_replace ${sample} > ${sample}_renamed; done
+```
+
+Color labels, midpoint root and add bootstraps to tree:
+
+Input files:
+
+- names_to_replace: 2 column tab-delimited file. First column: original name, second column: extended name we want to replace the original with to include a tax string. I.e.
+
+AP024486.1_BCS90544.1	DPANN|Micrarchaeota|Micrarchaeia|AP024486.1_BCS90544.1
+
+- color_mapping2: 2 column, tab-delimited file. With the taxon name and the color. I,e:
+
+Asgard	[&!color=#e0a910]
+DPANN	[&!color=#006200]
+
+```{bash}
+#add taxon string to treefile
+for sample in *tree; do perl /export/lv1/user/spang_team/Scripts/Others/Replace_tree_names.pl names_to_replace ${sample} > ${sample}_renamed; done
+
+#get file path list for all treefiles we want to modify
+ls -d "$PWD"/*tree_renamed | tac - > listOfFiles2.list
+
+#prepare files for figtree
+export LC_ALL=C
+export LANG=C
+
+perl /export/lv1/user/spang_team/Scripts/Others/formatFigtree3.pl listOfFiles2.list -C color_mapping2
+```

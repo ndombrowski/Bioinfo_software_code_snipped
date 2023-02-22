@@ -1,5 +1,107 @@
 # Tools for genome annotations
 
+## Prokka
+
+Whole genome annotation is the process of identifying features of interest in a set of genomic DNA sequences, and labelling them with useful information. Prokka is a software tool to annotate bacterial, archaeal and viral genomes quickly and produce standards-compliant output files. To call CDS it uses prodigal.
+
+Notice: Prokka is not actively maintained any more and [Bakta](https://www.microbiologyresearch.org/content/journal/mgen/10.1099/mgen.0.000685) can be used as an alternative.
+
+```{bash}
+#example usage for several genome fna files
+export PERL5LIB=/export/lv1/public_perl/perl5/lib/perl5
+
+for sample in `cat Files.txt`; do prokka fna/$sample* --outdir prokka/$sample --prefix $sample --locustag $sample --kingdom Archaea --addgenes --force --increment 10 --compliant --centre UU --cpus 20 --norrna --notrna ; done
+
+```
+
+## Blast
+
+### Generating a blast database
+
+The makeblastdb application produces BLAST databases from FASTA files. For more info, see [here](https://www.ncbi.nlm.nih.gov/books/NBK569841/)
+
+```{bash}
+#make db out of concat genomes
+makeblastdb -in input_folder/All_Bins_clean.faa  -out db_folder/All_Bins_clean   -dbtype prot -parse_seqids
+```
+
+### Example blastp
+
+```{bash}
+blastp -num_threads 40 -outfmt 6 -query prokka/All_Bins_clean.faa -db Merops_DB_short -out Merops/All_vs_Merops.tsv -evalue 1e-20
+```
+
+### Example psi blast
+
+```{bash}
+for sample in `cat arcog_list`; do psiblast -in_msa /export/lv1/user/spang_team/Databases/arCOGs2014/ar14.ali/renamed/$sample -db db_folder/All_Bins_clean -ignore_msa_master -num_threads 20 -evalue 1e-4 -show_gis -outfmt 6 -max_target_seqs 1000 -dbsize 100000000 -comp_based_stats F -seg no > arcogs/single/$sample.blast;done
+```
+
+## Diamond
+
+Example of running diamond versus a local ncbi nr database. For information on how to download ncbi_nr check out the information [here](https://www.ncbi.nlm.nih.gov/books/NBK569856/).
+
+```{bash}
+iamond blastp -q All_Genomes_clean.faa --more-sensitive --evalue 1e-3 --threads $cpus --seq 50 --db /export/data01/databases/ncbi_nr/diamond/nr.dmnd --taxonmap /export/data01/databases/taxmapfiles/ncbi_nr/prot.accession2taxid.gz --outfmt 6 qseqid qtitle qlen sseqid salltitles slen qstart qend sstart send evalue bitscore length pident staxids -o NCBI_NR/All_NCBInr.tsv
+```
+
+Example for downstream parsing:
+
+```{bash}
+
+#Select columns of interest in diamond output file
+awk -F'\t' -v OFS="\t" '{ print $1, $5, $6, $11, $12, $14, $15 }'  NCBI_NR/All_NCBInr.tsv | sed 's/ /_/g' > NCBI_NR/temp
+
+#Parse Diamnond Results
+python /export/lv1/user/spang_team/Scripts/Others//parse_diamond_blast_results_id_taxid.py -i FileLists/AllProteins_list.txt -d NCBI_NR/temp -o NCBI_NR/temp2
+```
+
+## Interproscan
+
+Since interproscan runs for a long time, it is useful to split a larger file up into smaller ones and run several analyses in parallel:
+
+```{bash}
+#prepare folders
+mkdir split_faa
+
+#split file up, each new file contains 1000 sequences
+python /export/lv1/user/spang_team/Scripts/Others/Split_Multifasta.py -m faa/Prokka/All_Genomes_clean.faa -n 1000
+
+#mv files to a better dir
+mv File*.faa split_faa
+```
+
+Now we can run interrposcan: 
+
+```{bash}
+parallel -j10 'i={}; interproscan.sh -i $i -d IPRscan/ -appl TIGRFAM,SFLD,SUPERFAMILY,Gene3D,Hamap,Coils,ProSiteProfiles,SMART,CDD,PRINTS,ProSitePatterns,Pfam,ProDom,MobiDBLite,PIRSF,TMHMM -T IPRscan/temp --iprlookup --goterms -cpu 5' ::: split_faa/File*.faa
+```
+
+Example for downstream parsing of interproscan results:
+
+```{bash}
+#organize data
+mkdir IPRscan/single_files
+mkdir IPRscan/Concat_results/
+mv IPRscan/File* IPRscan/single_files
+
+#combine results from individual searches
+cat IPRscan/single_files/File*.faa.tsv > IPRscan/Concat_results/DPANN_prot_all_bins_iprscan-results.tsv
+
+#condense the results
+#-s: contains the input used for the interrposcan
+python /export/lv1/user/spang_team/Scripts/Others/parse_IPRdomains_vs2_GO_2_ts_sigP.py -s faa/Prokka/All_Genomes_clean.faa -i IPRscan/Concat_results/DPANN_prot_all_bins_iprscan-results.tsv -o IPRscan/DPANN_prot_all_bins_iprscan-results_parsed.tsv
+
+#remove issue with spaces
+sed 's/ /_/g' IPRscan/All_bins_bins_iprscan-results_parsed.tsv | LC_ALL=C  sort > IPRscan/temp.txt
+
+#print only columns of interest
+awk -F'\t' -v OFS="\t"  '{print $1, $2,$3,$4, $5, $8, $9}' IPRscan/temp.txt > IPRscan/temp2
+
+#add header
+echo -e "accession\tIPR\tIPRdescription\tIPR_PFAM\tIPR_PFAMdescription\tTMHMM\tSignalP" | cat - IPRscan/temp2 > IPRscan/K_IPR.tsv
+```
+
 ## Hmmsearch
 
 ### Basics

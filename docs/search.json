@@ -19,5 +19,12 @@
     "title": "2  Tools for sequence manipulation",
     "section": "",
     "text": "Takes a bed file as input and extract that region from a multiple sequence fasta file.\nExample for the .bed input file: AP024486.1_BCS91053.1 175 392 arCOG03214.1 182.5\nExample for the output file: >AP024486.1_BCS91053.1:175-392 DFIETWLKALDIVDKFGELKKTEYNIDQKEVFLLTSVIRDTTNVNIPEWLPISKSDLIQYNKEFFDINKPEGVDYTYGERLFNYAFNDKIYDQIDYIKAKLKESSYTRRAVAVTWNLEKDQSSSNPPCLIAVQYLIKFNKLYLYALFRSHDIYGAWILNAYALIMLQHRVAEQLNIKPGAIAINSVSAHIYKNNFQRVKDILDKYYRNKQEPFVIDE\n\nbedtools getfasta -fi All_Genomes.faa -bed to_extract.bed  > extracted_proteins.fasta\n\n\n\n\nbedtools subtract bedtools` subtract searches for features in B that overlap A by at least the number of base pairs given by the -f option. If an overlapping feature is found in B, the overlapping portion is removed from A and the remaining portion of A is reported. If a feature in B overlaps all of a feature in A, the A feature will not be reported. If a feature in B does not overlap a feature in A by at least the -f amount, the A feature will be reported in its entirety.\n\nbedtools subtract [OPTIONS] -a fileA.bed -b fileB.bed"
+  },
+  {
+    "objectID": "Phylogenies.html",
+    "href": "Phylogenies.html",
+    "title": "3  Tools for phylogenetic analyses",
+    "section": "",
+    "text": "#less than 1000 seqs\nmafft-linsi --reorder --thread 4  Input.faa > Input.aln\n\n#more than 1000 seqs\nmafft --reorder --thread 4  Input.faa > Input.aln"
   }
 ]

@@ -12,6 +12,7 @@ book:
     - index.qmd
     - Annotating_genomes.qmd
     - Sequence_manipulation.qmd
+    - Phylogenies.qmd
 
 bibliography: references.bib
 
